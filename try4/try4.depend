@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1761654560 source:c:\users\dom\documents\robotyka\robotyka\try4\main.cpp
+	<iostream>
+	<cmath>
+	<fstream>
+
