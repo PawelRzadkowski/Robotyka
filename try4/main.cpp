@@ -5,15 +5,15 @@
 using namespace std;
 
 //struktura wezla
-struct Node {
+struct komorka {
     int x,y;
     double g,h,f;
-    Node* rodzic;
+    komorka* rodzic;
 
     //konstruktor dla wezla bezargumentowy
-    Node() : x(0), y(0), g(0), h(0), f(0), rodzic(nullptr) {}
+    komorka() : x(0), y(0), g(0), h(0), f(0), rodzic(nullptr) {}
     //konstruktor dla wezla z argumentami
-    Node(int x_, int y_, double g_, double h_,Node* rodzic_ = nullptr)
+    komorka(int x_, int y_, double g_, double h_,komorka* rodzic_ = nullptr)
         : x(x_), y(y_), g(g_), h(h_), f(g_ + h_), rodzic(rodzic_) {}
 };
 
@@ -23,8 +23,8 @@ double H_Euklidesowa(int x1,int y1 , int x2, int y2){
 }
 
 // do sprawdzania czy wezel jest w liscie
-    bool czyWLiście(Node lista[], int count, int x, int y) {
-        for (int i = 0; i < count; i++) {
+    bool czyWLiście(komorka lista[], int ilosc, int x, int y) {
+        for (int i = 0; i < ilosc; i++) {
             if (lista[i].x == x && lista[i].y == y) {
                 return true;
             }
@@ -33,13 +33,33 @@ double H_Euklidesowa(int x1,int y1 , int x2, int y2){
     }
 
     // do znajdowania indeksu
-    int znajdzIndeks(Node lista[], int count, int x, int y) {
-        for (int i = 0; i < count; i++) {
+    int znajdzIndeks(komorka lista[], int ilosc, int x, int y) {
+        for (int i = 0; i < ilosc; i++) {
             if (lista[i].x == x && lista[i].y == y) {
                 return i;
             }
         }
         return -1;
+    }
+
+    // z pliku grid.txt wczytujemy komorki i wstawiamy je do tablicy
+    // wpisywane jest tak , jakby tablica byla odwrocona inaczej punkt startowy znajdowalby sie w miejsciu (0,19) , a koncowy w (19,0)
+    // w ten sposob zadeklarowalem punkt startowy w punkcie (0,0) a koncowy w punkcie(19,19)
+    void uzupelnijTabele(int table[20][20],string filename){
+        ifstream plik(filename);
+        if (!plik) {
+            cout << "Blad przy otwieraniu pliku" << endl;
+            return;
+        }
+
+        for (int i = 19; i >= 0; i--) {
+            for (int j = 0; j < 20; j++) {
+                if (!(plik >> table[i][j])) {
+                    cout << "Nie mozna odczytac komorki z pliku" << endl;
+                }
+            }
+        }
+        plik.close();
     }
 
 
@@ -50,93 +70,84 @@ int main() {
     const int COL = 20;
     int tablica[ROW][COL];
 
+
+    //uzupelnienie tablicy
+    uzupelnijTabele(tablica,"grid.txt");
+
     //kolejnosc sprawdzania sasiadow gora , dol ,lewo , prawo
     //zaczynamy w w punkcie lewo dol , ktory w tablicy ma wspolrzedne [0][19] , wiec aby isc na mapie do gory musimy zmniejszyc wspolrzedna y
     int k_sprawdzanie[4][2] = {
-        {0, -1},   // góra
-        {0, 1},    // dół
+        {0, 1},   // góra
+        {0, -1},    // dół
         {-1, 0},   // lewo
         {1, 0}     // prawo
     };
 
     // lista otwarta , przechowuje kratki ktore sa rozwazane pod ekspansje
-    Node lOtwarta[ROW * COL];
-    int otwartaCount = 0;
+    komorka lOtwarta[ROW * COL];
+    int otwartaIlosc = 0;
 
     //lista zamknieta , przechowuje kratki ktore juz byly odwiedzone , usuniete z listy otwartej
-    Node lZamknieta[ROW * COL];
-    int zamknietaCount = 0;
-
-    // z pliku grid.txt wczytujemy komorki i wstawiamy je do tablicy
-    ifstream plik("grid.txt");
-    if (!plik) {
-        cout << "Blad w dostepie do pliku" << endl;
-        return -1;
-    }
-
-    for (int i = ROW - 1; i >= 0; i--) {
-        for (int j = 0; j < COL; j++) {
-            if (!(plik >> tablica[i][j])) {
-                cout << "Nie mozna odczytac komorki z pliku" << endl;
-                return -1;
-            }
-        }
-    }
-    plik.close();
+    komorka lZamknieta[ROW * COL];
+    int zamknietaIlosc = 0;
 
 
-    //stworzenie punktu startowego wspol(0,0) i punktu koncowego wspol(19,19) , zaczynamy od dolu od lewej strony
-    Node pstart(0, 0, 0.0, H_Euklidesowa(0, 0, COL-1, ROW-1));
-    Node pkoniec(COL-1, ROW-1, 0.0, 0.0);
+
+    // tablica jest juz odwrocona , stworzenie punktu startowego wspol(0,0) i punktu koncowego wspol(19,19) , zaczynamy od dolu od lewej strony
+    // idziemy prawo gora
+    komorka pstart(0, 0, 0.0, H_Euklidesowa(0, 0, 19, 19));
+    komorka pkoniec(19, 19, 0.0, 0.0);
 
     // dodanie pstart do listy otwartej
-    lOtwarta[otwartaCount++] = pstart;
+    lOtwarta[0] = pstart;
+    otwartaIlosc++;
 
     bool celOsiagniety = false;
-    Node* celNode = nullptr;
+    komorka* cel = nullptr;
 
 
     //algorytm
 
     // gdy w liscie otwartej znajduja sie elementy
-    while (otwartaCount > 0) {
+    while (otwartaIlosc > 0) {
 
         // wybranie z listy otwartej elementu z najmiejsza odlegloscia od punktu koncowego
         int indeksMin_f = 0;
-        for (int i = 1; i < otwartaCount; i++) {
+        for (int i = 1; i < otwartaIlosc; i++) {
             if (lOtwarta[i].f < lOtwarta[indeksMin_f].f) {
                 indeksMin_f = i;
             }
         }
 
-        Node aktualny_Node = lOtwarta[indeksMin_f];
+        komorka aktualna_komorka = lOtwarta[indeksMin_f];
 
         // usuwanie elementu z listy otwartej
-        for (int i = indeksMin_f; i < otwartaCount - 1; i++) {
+        for (int i = indeksMin_f; i < otwartaIlosc - 1; i++) {
             lOtwarta[i] = lOtwarta[i + 1];
         }
-        otwartaCount--;
+        otwartaIlosc--;
 
         // dodanie elementu do listy zamknietej
-        lZamknieta[zamknietaCount++] = aktualny_Node;
+        lZamknieta[zamknietaIlosc] = aktualna_komorka;
+        zamknietaIlosc++;
 
-        // sprawdza czy wspolrzedne aktualnego noda jest rowne pkoniec
+        // sprawdza czy wspolrzedne aktualnej komorki jest rowne pkoniec
         // jeśli algorytm dotarł do celu , oznacza ścieżkę w tablicy wartością 3
-        // przechodząc wstecz przez węzły rodziców od punktu końcowego do startowego
-        if (aktualny_Node.x == pkoniec.x && aktualny_Node.y == pkoniec.y) {
+        // przechodząc wstecz przez wskazniki na rodziców od punktu końcowego do startowego
+        if (aktualna_komorka.x == pkoniec.x && aktualna_komorka.y == pkoniec.y) {
             celOsiagniety = true;
-            Node* sciezka = &aktualny_Node;
+            komorka* sciezka = &aktualna_komorka;
             while (sciezka != nullptr) {
-                tablica[sciezka->y][sciezka->x] = 3;
-                sciezka = sciezka->rodzic;
+                tablica[(*sciezka).y][(*sciezka).x] = 3;
+                sciezka = (*sciezka).rodzic;
             }
             break;
         }
 
         // Sprawdzanie sąsiadów
         for (int i = 0; i < 4; i++) {
-            int sasiad_x = aktualny_Node.x + k_sprawdzanie[i][0];
-            int sasiad_y = aktualny_Node.y + k_sprawdzanie[i][1];
+            int sasiad_x = aktualna_komorka.x + k_sprawdzanie[i][0];
+            int sasiad_y = aktualna_komorka.y + k_sprawdzanie[i][1];
 
             //czy sasiad wychodzi poza granice grida , jesli tak jest pomijany
             if (sasiad_x < 0 || sasiad_y < 0 || sasiad_x >= 20 || sasiad_y >=20 )
@@ -147,23 +158,23 @@ int main() {
 
 
             // jesli wezel jest przeszkoda to jest pomijana
-            if (tablica[ny][nx] == 5)
+            if (tablica[sasiad_y][sasiad_x] == 5)
             {
                 continue;
             }
 
             // jesli wezel jest w liscie zamknietej to jest pomijany
-            if (czyWLiście(lZamknieta, zamknietaCount, nx, ny))
+            if (czyWLiście(lZamknieta, zamknietaIlosc, sasiad_x, sasiad_y))
             {
                 continue;
             }
 
             //nowy koszt g i h dla sasiada
-            double g = aktualny_Node.g + 1.0;
-            double h = H_Euklidesowa(nx, ny, pkoniec.x, pkoniec.y);
+            double g = aktualna_komorka.g + 1.0;
+            double h = H_Euklidesowa(sasiad_x, sasiad_y, pkoniec.x, pkoniec.y);
 
             // sprawdza czy wezel jest w liscie otwartej
-            int indeksOtwarty = znajdzIndeks(lOtwarta, otwartaCount, nx, ny);
+            int indeksOtwarty = znajdzIndeks(lOtwarta, otwartaIlosc, sasiad_x, sasiad_y);
 
             if (indeksOtwarty != -1) {
                 // gdy sciezka jest lepsza
@@ -173,8 +184,8 @@ int main() {
                 }
             } else {
                 // jesli wezel nie znajduje sie na liscie otwartej , to jest tam dodawany
-                if (otwartaCount < ROW * COL) {
-                    lOtwarta[otwartaCount++] = Node(nx, ny, g, h, new Node(aktualny_Node));
+                if (otwartaIlosc < ROW * COL) {
+                    lOtwarta[otwartaIlosc++] = komorka(sasiad_x, sasiad_y, g, h, new komorka(aktualna_komorka));
                 }
             }
         }
