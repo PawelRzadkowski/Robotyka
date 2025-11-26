@@ -1,0 +1,6 @@
+# depslib dependency file v1.0
+1764184789 source:c:\users\dom\documents\robotyka\agwiazdka\main.cpp
+	<iostream>
+	<cmath>
+	<fstream>
+
