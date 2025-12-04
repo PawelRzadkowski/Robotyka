@@ -1,4 +1,4 @@
-//Pawe³ Rzadkowski nr. 175489
+//Pawel Rzadkowski nr. 175489
 
 #include <iostream>
 #include <cmath>
